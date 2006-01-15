@@ -44,6 +44,8 @@ METHODS
 
                     type => 'NDBM'
 
+                * CDB       Constant Database
+
                 * DB        Berkeley DB
 
                 * GDBM      GNU Database Mandager
@@ -51,9 +53,9 @@ METHODS
                 * NDBM      New Database Mandager. "path" should be
                             specified without a trailing ".db" suffix.
 
-                * SDBM      Substitute Database Mandager. "path" should be
-                            specified without a trailing ".pag" or ".dir"
-                            suffix.
+                * SDBM      Substitute Database Mandager. Comes with both
+                            with perl and Apache. "path" should be specified
+                            without a trailing ".pag" or ".dir" suffix.
 
         * log   Any object that supports "debug", "info", "error" and
                 "warn".
@@ -71,6 +73,12 @@ SEE ALSO
     htdbm(1)
 
     dbmmanage(1)
+
+    <http://www.unixpapa.com/incnote/dbm.html> - Overview of various DBM's.
+
+    <http://cr.yp.to/cdb.html> - CDB
+
+    AnyDBM_File - Compares different DBM's
 
 AUTHOR
     Christian Hansen "ch@ngmedia.com"

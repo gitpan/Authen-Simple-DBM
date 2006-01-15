@@ -8,7 +8,7 @@ use Carp             qw[];
 use Fcntl            qw[];
 use Params::Validate qw[];
 
-our $VERSION = 0.1;
+our $VERSION = 0.2;
 
 __PACKAGE__->options({
     path => {
@@ -20,8 +20,8 @@ __PACKAGE__->options({
         default   => 'SDBM',
         optional  => 1,
         callbacks => {
-            'is DB, GDBM, NDBM or SDBM' => sub {
-                $_[0] =~ qr/^DB|GDBM|NDBM|SDBM$/;
+            'is either DB, GDBM, NDBM or SDBM' => sub {
+                $_[0] =~ qr/^CDB|DB|GDBM|NDBM|SDBM$/;
             }
         }
     }
@@ -50,26 +50,34 @@ sub init {
         Carp::croak( qq/Failed to load class '$class' for DBM type '$type'. Reason: '$@'/ );
     }
 
-    my $flags = $type eq 'GDBM' ? &GDBM_File::GDBM_READER : &Fcntl::O_RDONLY;
-    my %db    = ();
-
-    unless ( tie( %db, $class, $path, $flags, 0644 ) ) {
-        Carp::croak( qq/Failed to open database '$path'. Reason: '$!'/ );
-    }
+    my $dbm = $self->_open_dbm( $type, $path )
+      or Carp::croak( qq/Failed to open database '$path'. Reason: '$!'/ );
 
     return $self->SUPER::init($params);
+}
+
+sub _open_dbm {
+    my $self  = shift;
+    my $type  = shift || $self->type;
+    my $path  = shift || $self->path;
+
+    my $flags = $type eq 'GDBM' ? &GDBM_File::GDBM_READER : &Fcntl::O_RDONLY;
+    my $class = sprintf( '%s_File', $type );
+    my @args  = ( $path );
+
+    unless ( $type eq 'CDB' ) {
+        push( @args, $flags, 0644 );
+    }
+
+    return $class->TIEHASH(@args);
 }
 
 sub check {
     my ( $self, $username, $password ) = @_;
 
-    my $class     = sprintf( '%s_File', $self->type );
-    my $path      = $self->path;
-    my $flags     = $self->type eq 'GDBM' ? &GDBM_File::GDBM_READER : &Fcntl::O_RDONLY;
-    my %db        = ();
-    my $encrypted = undef;
+    my ( $path, $dbm, $encrypted ) = ( $self->path, undef, undef );
 
-    unless ( tie( %db, $class, $self->path, $flags, 0644 ) ) {
+    unless ( $dbm = $self->_open_dbm ) {
 
         $self->log->error( qq/Failed to open database '$path'. Reason: '$!'/ )
           if $self->log;
@@ -77,7 +85,8 @@ sub check {
         return 0;
     }
 
-    unless ( defined( $encrypted = $db{$username} ) || defined( $encrypted = $db{"$username\0"} ) ) {
+    unless (    defined( $encrypted = $dbm->FETCH( $username        ) )
+             || defined( $encrypted = $dbm->FETCH( $username . "\0" ) ) ) {
 
         $self->log->debug( qq/User '$username' was not found in database '$path'./ )
           if $self->log;
@@ -175,6 +184,10 @@ DBM type. Valid options are: C<DB>, C<GDBM>, C<NDBM> and C<SDBM>. Defaults to C<
 
 =over 12
 
+=item * CDB
+
+Constant Database
+
 =item * DB 
 
 Berkeley DB
@@ -190,8 +203,8 @@ suffix.
 
 =item * SDBM
 
-Substitute Database Mandager. C<path> should be specified without a trailing 
-C<.pag> or C<.dir> suffix.
+Substitute Database Mandager. Comes with both with perl and Apache. C<path> 
+should be specified without a trailing C<.pag> or C<.dir> suffix.
 
 =back
 
@@ -218,6 +231,12 @@ L<Authen::Simple::Password>.
 L<htdbm(1)>
 
 L<dbmmanage(1)>
+
+L<http://www.unixpapa.com/incnote/dbm.html> - Overview of various DBM's.
+
+L<http://cr.yp.to/cdb.html> - CDB
+
+L<AnyDBM_File> - Compares different DBM's
 
 =head1 AUTHOR
 

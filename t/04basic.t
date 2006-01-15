@@ -14,11 +14,11 @@ plan tests => 14;
 
 use_ok('Authen::Simple::DBM');
 
-{
-    tie( my %database, 'SDBM_File', 'database.db', O_RDWR | O_CREAT | O_TRUNC, 0664 )
+{    
+    my $dbm = SDBM_File->TIEHASH( 'database.db', O_RDWR | O_CREAT | O_TRUNC, 0664 )
       or die q/Failed to create database 'database.db'. Reason: $!/;
 
-    %database = (
+    my %create = (
         'plain'        => 'plain',
         'crypt'        => 'lk9Mh5KHGjAaM',
         'md5'          => '$1$NRe32ijZ$THIS7aDH.e093oDOGD10M/',
@@ -31,10 +31,11 @@ use_ok('Authen::Simple::DBM');
         'with groups'  => "lk9Mh5KHGjAaM:user,admin:comment",        
         "with null\0"  => "lk9Mh5KHGjAaM\0"
     );
-
-    untie(%database);
+    
+    while ( my ( $key, $value ) = each(%create) ) {
+        $dbm->STORE( $key => $value );
+    }
 }
-
 
 my $dbm = Authen::Simple::DBM->new(
     path => 'database.db'

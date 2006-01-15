@@ -1,6 +1,6 @@
 ---
 name: Authen-Simple-DBM
-version: 0.1
+version: 0.2
 author:
   - 'Christian Hansen C<ch@ngmedia.com>'
 abstract: Simple DBM authentication
@@ -10,5 +10,5 @@ requires:
 provides:
   Authen::Simple::DBM:
     file: lib/Authen/Simple/DBM.pm
-    version: 0.1
+    version: 0.2
 generated_by: Module::Build version 0.2611
